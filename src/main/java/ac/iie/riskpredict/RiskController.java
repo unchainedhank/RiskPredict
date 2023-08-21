@@ -2,14 +2,12 @@ package ac.iie.riskpredict;
 
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.util.StreamUtils;
@@ -20,10 +18,8 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -50,11 +46,12 @@ public class RiskController {
 
     //更新锁，如果请求的时候正在更新=1
     volatile AtomicBoolean isUpdating = new AtomicBoolean(false); // 定义一个原子整型变量
-    volatile AtomicInteger currentCount = new AtomicInteger(0); // 定义一个原子整型变量
-    //    volatile String currentProgress = "0"; // 使用volatile关键字修饰共享变量
+    volatile AtomicInteger updateCurrentCount = new AtomicInteger(0); // 定义一个原子整型变量
+
+    volatile AtomicBoolean isTraining = new AtomicBoolean(false); // 定义一个原子整型变量
+    volatile AtomicInteger trainCurrentCount = new AtomicInteger(0); // 定义一个原子整型变量
     @Value("${my.log-path}")
     private String configuredLogPath;
-
 
 
     @GetMapping(value = "/testpy")
@@ -100,26 +97,26 @@ public class RiskController {
                     for (SupplierRisk r : riskPage.getContent()) {
                         computeFeatures(r);
                         logger.info("已更新" + r.getSupply_id());
-                        currentCount.getAndIncrement();
+                        updateCurrentCount.getAndIncrement();
                     }
                 });
             }
             executorService.shutdown();
             executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-            int s = currentCount.get();
+            int s = updateCurrentCount.get();
             isUpdating.set(false);
-            currentCount.set(0);
+            updateCurrentCount.set(0);
             return "更新完成" + "，共更新记录" + s + "条";
         } catch (Exception e) {
             isUpdating.set(false);
-            currentCount.set(0);
+            updateCurrentCount.set(0);
             return "更新失败" + " 失败原因：" + e.getMessage();
         }
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/risk/updateProgress")
     public String getUpdateProgress() {
-        return isUpdating.get() ? "更新中，当前进度：" + currentCount.get() + "/" + count : "当前系统不在更新中";
+        return isUpdating.get() ? "更新中，当前进度：" + updateCurrentCount.get() + "/" + count : "当前系统不在更新中";
 
     }
 
@@ -225,56 +222,217 @@ public class RiskController {
 
     @RequestMapping(method = RequestMethod.GET, value = "/risk/train")
     public String train() {
-        String[] TRAIN_HEADER = {"supply_id", "sample_class", "supplier_name", "supply_code", "supplier_id",
-                "tender_id", "contract_cycle", "avg_history_contract_cycle", "plan_cycle", "avg_yearly_plan_cycle",
-                "history_plan_cycle", "rank_pack_unit_price", "vari_pack_unit_price", "avg_pack_unit_price",
-                "max_pack_unit_price", "unit_price", "vari_yearly_unit_price", "total_price",
-                "avg_history_total_price", "vari_history_total_price", "rank_history_total_price",
-                "rank_yearly_total_price", "supply_num", "vari_history_num", "max_history_num", "rank_yearly_num",
-                "history_fulfill_rate", "fulfill_times", "history_breach_rate", "history_breach_times",
-                "max_history_breach_amount", "sum_history_breach_amount", "avg_history_breach_amount", "row_material"
-                , "punish_times", "sum_punish", "register_capital", "city", "supply_history_length",
-                "legal_assist_times", "land_mortgage_area", "overdue_tax", "lawsuit_times", "sum_lawsuit",
-                "abnormal_operation_times", "mission_accept_date", "contract_date", "plan_date", "delivery_date",
-                "real_delivery_date", "supply_name"};
-        List<SupplierRisk> allTrainData = dao.findAll();
-        File trainCsv = new File("/app/classes/static/t_supply_risk.csv");
-        trainCsv.delete();
-        List<String> csvHeader = Arrays.asList(TRAIN_HEADER);
-        CSVFormat format = CSVFormat.DEFAULT.withHeader(TRAIN_HEADER).withSkipHeaderRecord();
-        //创建数据集
-        try (Writer out = new FileWriter("/app/classes/static/t_supply_risk.csv");
-             CSVPrinter printer = new CSVPrinter(out, format)) {
-            printer.printRecord(csvHeader);
-            for (SupplierRisk risk : allTrainData) {
-                List<String> records = new ArrayList<>();
-                Field[] fields = risk.getClass().getDeclaredFields();
-                for (Field f :
-                        fields) {
-                    f.setAccessible(true);
-                    Object value = f.get(risk);
-                    if (value == null) {
-                        records.add("");
-                    } else if (value instanceof Integer || value instanceof Double) {
-                        records.add(String.valueOf(value));
-                    } else if (value instanceof Timestamp) {
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                        records.add(dateFormat.format(value));
-                    } else {
-                        records.add((String) value);
-                    }
-                }
-                printer.printRecord(records);
+        try {
+            if (isTraining.get()) {
+                return "正在训练中";
             }
+            isTraining.set(true);
+
+            File trainCsv = new File("/app/classes/static/t_supply_risk.csv");
+            trainCsv.delete();
+
+            BufferedWriter writer = new BufferedWriter(new FileWriter("/Users/a3/IdeaProjects/RiskPredict/src/main" +
+                    "/resources/static/t_supply_risk.csv", true));
+            String header = "supply_id,sample_class,supplier_name,supply_code,supplier_id," +
+                    "tender_id,contract_cycle,avg_history_contract_cycle,plan_cycle,avg_yearly_plan_cycle," +
+                    "history_plan_cycle,rank_pack_unit_price,vari_pack_unit_price,avg_pack_unit_price," +
+                    "max_pack_unit_price,unit_price,vari_yearly_unit_price,total_price," +
+                    "avg_history_total_price,vari_history_total_price,rank_history_total_price," +
+                    "rank_yearly_total_price,supply_num,vari_history_num,max_history_num,rank_yearly_num," +
+                    "history_fulfill_rate,fulfill_times,history_breach_rate,history_breach_times," +
+                    "max_history_breach_amount,sum_history_breach_amount,avg_history_breach_amount,row_material," +
+                    "punish_times,sum_punish,register_capital,city,supply_history_length," +
+                    "legal_assist_times,land_mortgage_area,overdue_tax,lawsuit_times,sum_lawsuit," +
+                    "abnormal_operation_times,mission_accept_date,contract_date,plan_date,delivery_date," +
+                    "real_delivery_date,supply_name";
+            writer.write(header);
+            writer.newLine();
+
+
+            //构建查询条件
+            ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("supply_id"); // 忽略 supply_id 属性
+            Example<SupplierRisk> example1 = Example.of(SupplierRisk.builder().sample_class(1).build(), matcher);
+            long count1 = dao.count(example1);
+            Example<SupplierRisk> example0 = Example.of(SupplierRisk.builder().sample_class(0).build(), matcher);
+            long count0 = dao.count(example0);
+
+            ExecutorService executorService = Executors.newFixedThreadPool(10); // 创建一个可缓存的线程池
+            logger.info("成功创建线程池：" + executorService);
+
+            int pageSize = 500; // 每页查询的记录数
+
+            long totalPage = (int) Math.ceil(count1 / (double) pageSize); // 总页数
+            // 获取履约履约数据
+            try {
+                for (int currentPage = 0; currentPage < totalPage; currentPage++) {
+                    final int page = currentPage;
+                    executorService.submit(() -> {
+                        PageRequest pageRequest = PageRequest.of(page, pageSize);
+                        logger.info("创建查询请求" + pageRequest.getPageNumber() + " " + pageRequest.getPageSize());
+                        Page<SupplierRisk> riskPage = dao.findAll(example1, pageRequest);
+
+                        logger.info("查询返回结果：" + riskPage.getContent().toArray().length + "条");
+                        for (SupplierRisk r : riskPage.getContent()) {
+                            StringBuilder builder = new StringBuilder();
+                            Field[] fields = r.getClass().getDeclaredFields();
+                            for (Field f : fields) {
+                                f.setAccessible(true);
+                                Object value;
+                                try {
+                                    value = f.get(r);
+                                } catch (IllegalAccessException e) {
+                                    throw new RuntimeException(e);
+                                }
+                                if (value instanceof Integer || value instanceof Double) {
+                                    builder.append(value);
+                                } else if (value instanceof Timestamp) {
+                                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                                    builder.append(dateFormat.format(value));
+                                } else {
+                                    builder.append((String) value);
+                                }
+                                builder.append(",");
+                            }
+                            try {
+                                writer.write(builder.toString());
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            try {
+                                writer.newLine();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            trainCurrentCount.getAndIncrement();
+                        }
+                    });
+                }
+
+            } catch (Exception e) {
+                return "训练失败：" + "获取履约数据失败" + e.getMessage();
+            }
+
+            // 获取违约履约数据
+            totalPage = (int) Math.ceil(count0 / (double) pageSize); // 总页数
+            try {
+                for (int currentPage = 0; currentPage < totalPage; currentPage++) {
+                    final int page = currentPage;
+                    executorService.submit(() -> {
+                        PageRequest pageRequest = PageRequest.of(page, pageSize);
+                        logger.info("创建查询请求" + pageRequest.getPageNumber() + " " + pageRequest.getPageSize());
+                        Page<SupplierRisk> riskPage = dao.findAll(example0, pageRequest);
+
+                        logger.info("查询返回结果：" + riskPage.getContent().toArray().length + "条");
+                        for (SupplierRisk r : riskPage.getContent()) {
+                            StringBuilder builder = new StringBuilder();
+                            Field[] fields = r.getClass().getDeclaredFields();
+                            for (Field f : fields) {
+                                f.setAccessible(true);
+                                Object value;
+                                try {
+                                    value = f.get(r);
+                                } catch (IllegalAccessException e) {
+                                    throw new RuntimeException(e);
+                                }
+                                if (value instanceof Integer || value instanceof Double) {
+                                    builder.append(value);
+                                } else if (value instanceof Timestamp) {
+                                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                                    builder.append(dateFormat.format(value));
+                                } else {
+                                    builder.append((String) value);
+                                }
+                                builder.append(",");
+                            }
+                            try {
+                                writer.write(builder.toString());
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            try {
+                                writer.newLine();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            trainCurrentCount.getAndIncrement();
+                        }
+                    });
+                }
+
+            } catch (Exception e) {
+                return "训练失败：" + "获取违约数据失败" + e.getMessage();
+            }
+
+            executorService.shutdown();
+            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+
+
+            //创建数据集
+            writer.close();
+            String pythonPath = "/app/classes/static/train.py";
+            //指定命令、路径、传递的参数
+            String[] arguments = new String[]{"python3", pythonPath};
+            String trainResult = invokePython(arguments);
+            isTraining.set(false);
+            return trainResult;
         } catch (Exception e) {
-            e.printStackTrace();
             return "训练失败" + " 失败原因：" + e.getMessage();
         }
-        String pythonPath = "/app/classes/static/train.py";
-        //指定命令、路径、传递的参数
-        String[] arguments = new String[]{"python3", pythonPath};
-        return invokePython(arguments);
+
+
+
     }
+//    public String train() {
+//        String[] TRAIN_HEADER = {"supply_id", "sample_class", "supplier_name", "supply_code", "supplier_id",
+//                "tender_id", "contract_cycle", "avg_history_contract_cycle", "plan_cycle", "avg_yearly_plan_cycle",
+//                "history_plan_cycle", "rank_pack_unit_price", "vari_pack_unit_price", "avg_pack_unit_price",
+//                "max_pack_unit_price", "unit_price", "vari_yearly_unit_price", "total_price",
+//                "avg_history_total_price", "vari_history_total_price", "rank_history_total_price",
+//                "rank_yearly_total_price", "supply_num", "vari_history_num", "max_history_num", "rank_yearly_num",
+//                "history_fulfill_rate", "fulfill_times", "history_breach_rate", "history_breach_times",
+//                "max_history_breach_amount", "sum_history_breach_amount", "avg_history_breach_amount", "row_material"
+//                , "punish_times", "sum_punish", "register_capital", "city", "supply_history_length",
+//                "legal_assist_times", "land_mortgage_area", "overdue_tax", "lawsuit_times", "sum_lawsuit",
+//                "abnormal_operation_times", "mission_accept_date", "contract_date", "plan_date", "delivery_date",
+//                "real_delivery_date", "supply_name"};
+//        List<SupplierRisk> allTrainData = dao.findAll();
+//        File trainCsv = new File("/app/classes/static/t_supply_risk.csv");
+//        trainCsv.delete();
+//        List<String> csvHeader = Arrays.asList(TRAIN_HEADER);
+//        CSVFormat format = CSVFormat.DEFAULT.withHeader(TRAIN_HEADER).withSkipHeaderRecord();
+//        //创建数据集
+//        try (Writer out = new FileWriter("/app/classes/static/t_supply_risk.csv");
+//             CSVPrinter printer = new CSVPrinter(out, format)) {
+//            printer.printRecord(csvHeader);
+//            for (SupplierRisk risk : allTrainData) {
+//                List<String> records = new ArrayList<>();
+//                Field[] fields = risk.getClass().getDeclaredFields();
+//                for (Field f :
+//                        fields) {
+//                    f.setAccessible(true);
+//                    Object value = f.get(risk);
+//                    if (value == null) {
+//                        records.add("");
+//                    } else if (value instanceof Integer || value instanceof Double) {
+//                        records.add(String.valueOf(value));
+//                    } else if (value instanceof Timestamp) {
+//                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//                        records.add(dateFormat.format(value));
+//                    } else {
+//                        records.add((String) value);
+//                    }
+//                }
+//                printer.printRecord(records);
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return "训练失败" + " 失败原因：" + e.getMessage();
+//        }
+//        String pythonPath = "/app/classes/static/train.py";
+//        //指定命令、路径、传递的参数
+//        String[] arguments = new String[]{"python3", pythonPath};
+//        return invokePython(arguments);
+//    }
 
     private void featureEngineering(@RequestBody SupplierRisk risk) {
 //        Class<?> engineering = service.getClass();
@@ -372,18 +530,5 @@ public class RiskController {
         return "log cleaned";
     }
 
-    private final ResourceLoader resourceLoader;
-    public RiskController(ResourceLoader resourceLoader) {
-        this.resourceLoader = resourceLoader;
-    }
-    @RequestMapping(method = RequestMethod.GET, value = "testCsv")
-    public String testCsv() throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(new File("/Users/a3/IdeaProjects/RiskPredict/test" +
-                ".csv"), true));
-        writer.write("123,123");
-        writer.newLine();
-        writer.close();
-        return "ok";
-    }
 }
 

@@ -1,6 +1,7 @@
 package ac.iie.riskpredict;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.lang.Nullable;
@@ -20,7 +21,9 @@ import java.util.Date;
 //@AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Builder
 @Table(name = "t_risk")
+@AllArgsConstructor
 public class SupplierRisk {
 
     // 物资唯一码
