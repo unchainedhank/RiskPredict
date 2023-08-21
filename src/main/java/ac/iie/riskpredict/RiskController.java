@@ -5,20 +5,16 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
-import org.hibernate.annotations.common.reflection.XMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.util.StreamUtils;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.persistence.EntityManager;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
@@ -41,11 +37,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RestController
 public class RiskController {
     Logger logger = LoggerFactory.getLogger(this.getClass());
-    @Resource
+    @javax.annotation.Resource
+
     private RiskServiceImpl service;
-    @Resource
+    @javax.annotation.Resource
     private SupplyRiskDao dao;
-    @Resource
+    @javax.annotation.Resource
+
     private LogCleaner logCleaner;
 
     private long count = 1;
@@ -57,14 +55,17 @@ public class RiskController {
     @Value("${my.log-path}")
     private String configuredLogPath;
 
+
+
+    @GetMapping(value = "/testpy")
     public String testPy() throws IOException {
         // 调用Python脚本并获取返回结果
-        Process process = Runtime.getRuntime().exec("C:\\Users\\Administrator\\Downloads\\RiskPredict\\RiskPredict" +
-                "\\src\\main\\resources\\static\\test.py");
+        Process process = Runtime.getRuntime().exec("python3 /Users/a3/IdeaProjects/RiskPredict/src/main/resources" +
+                "/static" +
+                "/test.py");
         String output = StreamUtils.copyToString(process.getInputStream(), StandardCharsets.UTF_8);
-
-// 如果有错误信息，则将错误信息作为响应返回；否则返回正常输出结果
-        if (process.exitValue() != 0) {
+        // 如果有错误信息，则将错误信息作为响应返回；否则返回正常输出结果
+        if (process.exitValue() == 0) {
             return StreamUtils.copyToString(process.getErrorStream(), StandardCharsets.UTF_8);
         } else {
             return output;
@@ -90,7 +91,6 @@ public class RiskController {
             logger.info("成功创建线程池：" + executorService);
             for (int currentPage = 0; currentPage < totalPage; currentPage++) {
                 final int page = currentPage;
-
                 executorService.submit(() -> {
                     PageRequest pageRequest = PageRequest.of(page, pageSize);
                     logger.info("创建查询请求" + pageRequest.getPageNumber() + " " + pageRequest.getPageSize());
@@ -372,6 +372,18 @@ public class RiskController {
         return "log cleaned";
     }
 
-
+    private final ResourceLoader resourceLoader;
+    public RiskController(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
+    @RequestMapping(method = RequestMethod.GET, value = "testCsv")
+    public String testCsv() throws IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(new File("/Users/a3/IdeaProjects/RiskPredict/test" +
+                ".csv"), true));
+        writer.write("123");
+        writer.newLine();
+        writer.close();
+        return "ok";
+    }
 }
 
