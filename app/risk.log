@@ -634,3 +634,35 @@ java.io.FileNotFoundException: /private/var/folders/4t/tdcl5tq90vnggnc_cpk8njn80
 2023-08-21 12:36:21.625  INFO 60850 --- [http-nio-8082-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
 2023-08-21 12:36:21.626  INFO 60850 --- [http-nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
 2023-08-21 12:36:21.627  INFO 60850 --- [http-nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2023-08-21 12:39:45.818  INFO 60850 --- [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-08-21 12:39:45.828  INFO 60850 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2023-08-21 12:39:45.855  INFO 60850 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2023-08-21 12:39:50.686  INFO 61140 --- [restartedMain] a.i.riskpredict.RiskPredictApplication   : Starting RiskPredictApplication using Java 1.8.0_362 on MainMac.local with PID 61140 (/Users/a3/IdeaProjects/RiskPredict/target/classes started by a3 in /Users/a3/IdeaProjects/RiskPredict)
+2023-08-21 12:39:50.688  INFO 61140 --- [restartedMain] a.i.riskpredict.RiskPredictApplication   : No active profile set, falling back to default profiles: default
+2023-08-21 12:39:50.727  INFO 61140 --- [restartedMain] o.s.b.devtools.restart.ChangeableUrls    : The Class-Path manifest attribute in /Users/a3/.m2/repository/com/oracle/database/jdbc/ojdbc8/19.7.0.0/ojdbc8-19.7.0.0.jar referenced one or more files that do not exist: file:/Users/a3/.m2/repository/com/oracle/database/jdbc/ojdbc8/19.7.0.0/oraclepki.jar
+2023-08-21 12:39:50.727  INFO 61140 --- [restartedMain] o.s.b.devtools.restart.ChangeableUrls    : The Class-Path manifest attribute in /Users/a3/.m2/repository/com/oracle/database/nls/orai18n/19.7.0.0/orai18n-19.7.0.0.jar referenced one or more files that do not exist: file:/Users/a3/.m2/repository/com/oracle/database/nls/orai18n/19.7.0.0/orai18n-mapping.jar,file:/Users/a3/.m2/repository/com/oracle/database/nls/orai18n/19.7.0.0/orai18n-utility.jar,file:/Users/a3/.m2/repository/com/oracle/database/nls/orai18n/19.7.0.0/orai18n-collation.jar,file:/Users/a3/.m2/repository/com/oracle/database/nls/orai18n/19.7.0.0/orai18n-translation.jar,file:/Users/a3/.m2/repository/com/oracle/database/nls/orai18n/19.7.0.0/orai18n-net.jar,file:/Users/a3/.m2/repository/com/oracle/database/nls/orai18n/19.7.0.0/orai18n-servlet.jar,file:/Users/a3/.m2/repository/com/oracle/database/nls/orai18n/19.7.0.0/orai18n-lcsd.jar,file:/Users/a3/.m2/repository/com/oracle/database/nls/orai18n/19.7.0.0/orai18n-tools.jar,file:/Users/a3/.m2/repository/com/oracle/database/nls/orai18n/19.7.0.0/gdk_custom.jar
+2023-08-21 12:39:50.727  INFO 61140 --- [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2023-08-21 12:39:50.728  INFO 61140 --- [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2023-08-21 12:39:51.329  INFO 61140 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-08-21 12:39:51.388  INFO 61140 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 50 ms. Found 1 JPA repository interfaces.
+2023-08-21 12:39:51.500  WARN 61140 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : No MyBatis mapper was found in '[ac.iie.riskpredict]' package. Please check your configuration.
+2023-08-21 12:39:51.910  INFO 61140 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8082 (http)
+2023-08-21 12:39:51.918  INFO 61140 --- [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2023-08-21 12:39:51.919  INFO 61140 --- [restartedMain] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.48]
+2023-08-21 12:39:51.977  INFO 61140 --- [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2023-08-21 12:39:51.977  INFO 61140 --- [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1249 ms
+2023-08-21 12:39:52.137  INFO 61140 --- [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2023-08-21 12:39:52.175  INFO 61140 --- [restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 5.4.32.Final
+2023-08-21 12:39:52.267  INFO 61140 --- [restartedMain] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2023-08-21 12:39:52.413  INFO 61140 --- [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2023-08-21 12:39:52.600  INFO 61140 --- [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2023-08-21 12:39:52.608  INFO 61140 --- [restartedMain] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.Oracle12cDialect
+2023-08-21 12:39:53.554  INFO 61140 --- [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2023-08-21 12:39:53.567  INFO 61140 --- [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2023-08-21 12:39:54.068  WARN 61140 --- [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2023-08-21 12:39:54.534  INFO 61140 --- [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2023-08-21 12:39:54.581  INFO 61140 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8082 (http) with context path ''
+2023-08-21 12:39:54.600  INFO 61140 --- [restartedMain] a.i.riskpredict.RiskPredictApplication   : Started RiskPredictApplication in 4.265 seconds (JVM running for 4.835)
+2023-08-21 12:39:57.427  INFO 61140 --- [http-nio-8082-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2023-08-21 12:39:57.427  INFO 61140 --- [http-nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2023-08-21 12:39:57.428  INFO 61140 --- [http-nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms

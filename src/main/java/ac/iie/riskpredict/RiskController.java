@@ -380,7 +380,7 @@ public class RiskController {
     public String testCsv() throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter(new File("/Users/a3/IdeaProjects/RiskPredict/test" +
                 ".csv"), true));
-        writer.write("123");
+        writer.write("123,123");
         writer.newLine();
         writer.close();
         return "ok";
