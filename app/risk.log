@@ -666,3 +666,4 @@ java.io.FileNotFoundException: /private/var/folders/4t/tdcl5tq90vnggnc_cpk8njn80
 2023-08-21 12:39:57.427  INFO 61140 --- [http-nio-8082-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
 2023-08-21 12:39:57.427  INFO 61140 --- [http-nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
 2023-08-21 12:39:57.428  INFO 61140 --- [http-nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2023-08-21 13:48:53.336  WARN 61140 --- [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Retrograde clock change detected (housekeeper delta=29s825ms), soft-evicting connections from pool.

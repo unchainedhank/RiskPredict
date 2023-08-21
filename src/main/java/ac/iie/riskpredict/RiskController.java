@@ -10,8 +10,10 @@ import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.util.StreamUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -43,6 +45,11 @@ public class RiskController {
     private LogCleaner logCleaner;
 
     private long count = 1;
+    private long count0 = 1;
+    private long count1 = 1;
+
+    StringBuilder output = new StringBuilder();
+    StringBuilder error = new StringBuilder();
 
     //更新锁，如果请求的时候正在更新=1
     volatile AtomicBoolean isUpdating = new AtomicBoolean(false); // 定义一个原子整型变量
@@ -102,7 +109,6 @@ public class RiskController {
     @RequestMapping(method = RequestMethod.GET, value = "/risk/updateProgress")
     public String getUpdateProgress() {
         return isUpdating.get() ? "更新中，当前进度：" + updateCurrentCount.get() + "/" + count : "当前系统不在更新中";
-
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/risk/getLog")
@@ -237,9 +243,11 @@ public class RiskController {
             //构建查询条件
             ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("supply_id"); // 忽略 supply_id 属性
             Example<SupplierRisk> example1 = Example.of(SupplierRisk.builder().sample_class(1).build(), matcher);
-            long count1 = dao.count(example1);
+            count1 = dao.count(example1);
+            logger.info("履约数" + count1);
             Example<SupplierRisk> example0 = Example.of(SupplierRisk.builder().sample_class(0).build(), matcher);
-            long count0 = dao.count(example0);
+            count0 = dao.count(example0);
+            logger.info("违约数" + count0);
 
             ExecutorService executorService = Executors.newFixedThreadPool(10); // 创建一个可缓存的线程池
             logger.info("成功创建线程池：" + executorService);
@@ -351,8 +359,6 @@ public class RiskController {
             executorService.shutdown();
             executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
 
-
-            //创建数据集
             writer.close();
             String pythonPath = "/app/classes/static/train.py";
             //指定命令、路径、传递的参数
@@ -365,7 +371,26 @@ public class RiskController {
         }
 
 
+    }
 
+    @RequestMapping(method = RequestMethod.GET, value = "/risk/trainProgress")
+    public String getTrainProgress() {
+        if (isTraining.get()) {
+            ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("supply_id"); // 忽略 supply_id 属性
+            Example<SupplierRisk> example1 = Example.of(SupplierRisk.builder().sample_class(1).build(), matcher);
+            count1 = dao.count(example1);
+            logger.info("履约数" + count1);
+            Example<SupplierRisk> example0 = Example.of(SupplierRisk.builder().sample_class(0).build(), matcher);
+            count0 = dao.count(example0);
+            logger.info("违约数" + count0);
+            long i = trainCurrentCount.get();
+            long j = count0 + count1;
+            if (i < j) {
+                return "正在更新中，进度：" + "正在获取数据：" + i + "/" + j;
+            } else {
+                return "正在更新中，进度：" + "正在训练：" + output.toString();
+            }
+        } else return "当前系统不在训练中";
     }
 //    public String train() {
 //        String[] TRAIN_HEADER = {"supply_id", "sample_class", "supplier_name", "supply_code", "supplier_id",
@@ -468,9 +493,6 @@ public class RiskController {
     }
 
     private String invokePython(String[] arguments) {
-        StringBuilder output = new StringBuilder();
-        StringBuilder error = new StringBuilder();
-
         try {
             ProcessBuilder builder = new ProcessBuilder(arguments);
             Process process = builder.start();
@@ -497,7 +519,7 @@ public class RiskController {
             err.close();
             process.waitFor();
         } catch (Exception e) {
-            return e.getMessage();
+            return output.toString()+error.toString()+e.getMessage();
         }
 
         String errorMsg = error.toString();
@@ -506,7 +528,9 @@ public class RiskController {
             return "预测失败" + " 失败原因：" + errorMsg;
         }
 
-        return output.toString();
+        String s = output.toString();
+        output.setLength(0);
+        return s;
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/risk/cleanLogs")
