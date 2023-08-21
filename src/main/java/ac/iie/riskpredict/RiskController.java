@@ -54,21 +54,6 @@ public class RiskController {
     private String configuredLogPath;
 
 
-    @GetMapping(value = "/testpy")
-    public String testPy() throws IOException {
-        // 调用Python脚本并获取返回结果
-        Process process = Runtime.getRuntime().exec("python3 /Users/a3/IdeaProjects/RiskPredict/src/main/resources" +
-                "/static" +
-                "/test.py");
-        String output = StreamUtils.copyToString(process.getInputStream(), StandardCharsets.UTF_8);
-        // 如果有错误信息，则将错误信息作为响应返回；否则返回正常输出结果
-        if (process.exitValue() == 0) {
-            return StreamUtils.copyToString(process.getErrorStream(), StandardCharsets.UTF_8);
-        } else {
-            return output;
-        }
-    }
-
     @RequestMapping(method = RequestMethod.GET, value = "/risk/update")
     public String update() {
         logger.info("系统准备更新");
