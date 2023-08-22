@@ -95,7 +95,8 @@ feature_columns = ['contract_cycle', 'avg_history_contract_cycle', 'plan_cycle',
                    'abnormal_operation_times']
 
 target_column = 'sample_class'
-data = pd.read_csv('/app/classes/static/t_supply_risk.csv', low_memory=False)
+# data = pd.read_csv('/app/classes/static/t_supply_risk.csv', low_memory=False)
+data = pd.read_csv('/Users/a3/IdeaProjects/RiskPredict/src/main/resources/static/t_supply_risk.csv', low_memory=False,error_bad_lines=False)
 
 # 划分数据集
 train, test = train_test_split(data)
@@ -169,7 +170,8 @@ pred = model.predict(test_X)
 metrics_sklearn(test_y, pred)
 #
 # 保存模型
-model.save_model(fname='/app/classes/static/model.json')
+model.save_model(fname='/Users/a3/IdeaProjects/RiskPredict/src/main/resources/static/model.json')
+# model.save_model(fname='/app/classes/static/model.json')
 
 
 

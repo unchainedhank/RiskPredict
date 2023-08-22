@@ -1,6 +1,7 @@
 package ac.iie.riskpredict;
 
 import com.alibaba.fastjson.JSON;
+import com.opencsv.CSVWriter;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -20,8 +21,10 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -219,10 +222,12 @@ public class RiskController {
             }
             isTraining.set(true);
 
-            File trainCsv = new File("/app/classes/static/t_supply_risk.csv");
+            File trainCsv = new File("/Users/a3/IdeaProjects/RiskPredict/src/main" +
+                    "/resources/static/t_supply_risk.csv");
             trainCsv.delete();
 
-            BufferedWriter writer = new BufferedWriter(new FileWriter("/Users/a3/IdeaProjects/RiskPredict/src/main" +
+
+            CSVWriter writer = new CSVWriter(new FileWriter("/Users/a3/IdeaProjects/RiskPredict/src/main" +
                     "/resources/static/t_supply_risk.csv", true));
             String header = "supply_id,sample_class,supplier_name,supply_code,supplier_id," +
                     "tender_id,contract_cycle,avg_history_contract_cycle,plan_cycle,avg_yearly_plan_cycle," +
@@ -236,8 +241,8 @@ public class RiskController {
                     "legal_assist_times,land_mortgage_area,overdue_tax,lawsuit_times,sum_lawsuit," +
                     "abnormal_operation_times,mission_accept_date,contract_date,plan_date,delivery_date," +
                     "real_delivery_date,supply_name";
-            writer.write(header);
-            writer.newLine();
+            String[] headerArray = header.split(",");
+            writer.writeNext(headerArray);
 
 
             //构建查询条件
@@ -266,7 +271,7 @@ public class RiskController {
 
                         logger.info("查询返回结果：" + riskPage.getContent().toArray().length + "条");
                         for (SupplierRisk r : riskPage.getContent()) {
-                            StringBuilder builder = new StringBuilder();
+                            List<String> builder = new ArrayList<>();
                             Field[] fields = r.getClass().getDeclaredFields();
                             for (Field f : fields) {
                                 f.setAccessible(true);
@@ -277,25 +282,15 @@ public class RiskController {
                                     throw new RuntimeException(e);
                                 }
                                 if (value instanceof Integer || value instanceof Double) {
-                                    builder.append(value);
+                                    builder.add(value.toString());
                                 } else if (value instanceof Timestamp) {
                                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                                    builder.append(dateFormat.format(value));
+                                    builder.add(dateFormat.format(value));
                                 } else {
-                                    builder.append((String) value);
+                                    builder.add((String) value);
                                 }
-                                builder.append(",");
                             }
-                            try {
-                                writer.write(builder.toString());
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                            try {
-                                writer.newLine();
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
+                            writer.writeNext(builder.toArray(new String[0]));
                             trainCurrentCount.getAndIncrement();
                         }
                     });
@@ -317,7 +312,7 @@ public class RiskController {
 
                         logger.info("查询返回结果：" + riskPage.getContent().toArray().length + "条");
                         for (SupplierRisk r : riskPage.getContent()) {
-                            StringBuilder builder = new StringBuilder();
+                            List<String> builder = new ArrayList<>();
                             Field[] fields = r.getClass().getDeclaredFields();
                             for (Field f : fields) {
                                 f.setAccessible(true);
@@ -328,25 +323,15 @@ public class RiskController {
                                     throw new RuntimeException(e);
                                 }
                                 if (value instanceof Integer || value instanceof Double) {
-                                    builder.append(value);
+                                    builder.add(value.toString());
                                 } else if (value instanceof Timestamp) {
                                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                                    builder.append(dateFormat.format(value));
+                                    builder.add(dateFormat.format(value));
                                 } else {
-                                    builder.append((String) value);
+                                    builder.add((String) value);
                                 }
-                                builder.append(",");
                             }
-                            try {
-                                writer.write(builder.toString());
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                            try {
-                                writer.newLine();
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
+                            writer.writeNext(builder.toArray(new String[0]));
                             trainCurrentCount.getAndIncrement();
                         }
                     });
@@ -360,7 +345,8 @@ public class RiskController {
             executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
 
             writer.close();
-            String pythonPath = "/app/classes/static/train.py";
+//            String pythonPath = "/app/classes/static/train.py";
+            String pythonPath = "/Users/a3/IdeaProjects/RiskPredict/src/main/resources/static/train.py";
             //指定命令、路径、传递的参数
             String[] arguments = new String[]{"python3", pythonPath};
             String trainResult = invokePython(arguments);
@@ -379,10 +365,8 @@ public class RiskController {
             ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("supply_id"); // 忽略 supply_id 属性
             Example<SupplierRisk> example1 = Example.of(SupplierRisk.builder().sample_class(1).build(), matcher);
             count1 = dao.count(example1);
-            logger.info("履约数" + count1);
             Example<SupplierRisk> example0 = Example.of(SupplierRisk.builder().sample_class(0).build(), matcher);
             count0 = dao.count(example0);
-            logger.info("违约数" + count0);
             long i = trainCurrentCount.get();
             long j = count0 + count1;
             if (i < j) {
@@ -392,7 +376,8 @@ public class RiskController {
             }
         } else return "当前系统不在训练中";
     }
-//    public String train() {
+
+    //    public String train() {
 //        String[] TRAIN_HEADER = {"supply_id", "sample_class", "supplier_name", "supply_code", "supplier_id",
 //                "tender_id", "contract_cycle", "avg_history_contract_cycle", "plan_cycle", "avg_yearly_plan_cycle",
 //                "history_plan_cycle", "rank_pack_unit_price", "vari_pack_unit_price", "avg_pack_unit_price",
