@@ -54,6 +54,13 @@
 <!--            <artifactId>orai18n-19.3.0.0.jar</artifactId>-->
 <!--            <systemPath>${project.basedir}/lib/orai18n-19.3.0.0.jar</systemPath>-->
 <!--        </dependency>-->
+
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.8.16</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>

@@ -1,7 +1,6 @@
 package ac.iie.riskpredict;
 
 import com.alibaba.fastjson.JSON;
-import com.opencsv.CSVWriter;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -16,20 +15,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static ac.iie.riskpredict.RiskServiceImpl.output;
 
 
 /**
@@ -48,18 +48,13 @@ public class RiskController {
     private LogCleaner logCleaner;
 
     private long count = 1;
-    private long count0 = 1;
-    private long count1 = 1;
-
-    StringBuilder output = new StringBuilder();
-    StringBuilder error = new StringBuilder();
 
     //更新锁，如果请求的时候正在更新=1
     volatile AtomicBoolean isUpdating = new AtomicBoolean(false); // 定义一个原子整型变量
     volatile AtomicInteger updateCurrentCount = new AtomicInteger(0); // 定义一个原子整型变量
 
-    volatile AtomicBoolean isTraining = new AtomicBoolean(false); // 定义一个原子整型变量
-    volatile AtomicInteger trainCurrentCount = new AtomicInteger(0); // 定义一个原子整型变量
+    volatile static public AtomicBoolean isTraining = new AtomicBoolean(false); // 定义一个原子整型变量
+    volatile static public AtomicInteger trainCurrentCount = new AtomicInteger(0); // 定义一个原子整型变量
     @Value("${my.log-path}")
     private String configuredLogPath;
 
@@ -173,7 +168,7 @@ public class RiskController {
 
             String[] arguments = new String[]{"python3", pythonPath, risk_feature};//指定命令、路径、传递的参数
             logger.warn("system cmd: " + Arrays.toString(arguments));
-            return invokePython(arguments);
+            return service.invokePython(arguments);
         } catch (Exception e) {
             return "预测失败" + " 失败原因：" + e.getMessage();
         }
@@ -216,163 +211,29 @@ public class RiskController {
 
     @RequestMapping(method = RequestMethod.GET, value = "/risk/train")
     public String train() {
-        try {
-            if (isTraining.get()) {
-                return "正在训练中";
-            }
-            isTraining.set(true);
-
-            File trainCsv = new File("/Users/a3/IdeaProjects/RiskPredict/src/main" +
-                    "/resources/static/t_supply_risk.csv");
-            trainCsv.delete();
-
-
-            CSVWriter writer = new CSVWriter(new FileWriter("/Users/a3/IdeaProjects/RiskPredict/src/main" +
-                    "/resources/static/t_supply_risk.csv", true));
-            String header = "supply_id,sample_class,supplier_name,supply_code,supplier_id," +
-                    "tender_id,contract_cycle,avg_history_contract_cycle,plan_cycle,avg_yearly_plan_cycle," +
-                    "history_plan_cycle,rank_pack_unit_price,vari_pack_unit_price,avg_pack_unit_price," +
-                    "max_pack_unit_price,unit_price,vari_yearly_unit_price,total_price," +
-                    "avg_history_total_price,vari_history_total_price,rank_history_total_price," +
-                    "rank_yearly_total_price,supply_num,vari_history_num,max_history_num,rank_yearly_num," +
-                    "history_fulfill_rate,fulfill_times,history_breach_rate,history_breach_times," +
-                    "max_history_breach_amount,sum_history_breach_amount,avg_history_breach_amount,row_material," +
-                    "punish_times,sum_punish,register_capital,city,supply_history_length," +
-                    "legal_assist_times,land_mortgage_area,overdue_tax,lawsuit_times,sum_lawsuit," +
-                    "abnormal_operation_times,mission_accept_date,contract_date,plan_date,delivery_date," +
-                    "real_delivery_date,supply_name";
-            String[] headerArray = header.split(",");
-            writer.writeNext(headerArray);
-
-
-            //构建查询条件
-            ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("supply_id"); // 忽略 supply_id 属性
-            Example<SupplierRisk> example1 = Example.of(SupplierRisk.builder().sample_class(1).build(), matcher);
-            count1 = dao.count(example1);
-            logger.info("履约数" + count1);
-            Example<SupplierRisk> example0 = Example.of(SupplierRisk.builder().sample_class(0).build(), matcher);
-            count0 = dao.count(example0);
-            logger.info("违约数" + count0);
-
-            ExecutorService executorService = Executors.newFixedThreadPool(10); // 创建一个可缓存的线程池
-            logger.info("成功创建线程池：" + executorService);
-
-            int pageSize = 500; // 每页查询的记录数
-
-            long totalPage = (int) Math.ceil(count1 / (double) pageSize); // 总页数
-            // 获取履约履约数据
-            try {
-                for (int currentPage = 0; currentPage < totalPage; currentPage++) {
-                    final int page = currentPage;
-                    executorService.submit(() -> {
-                        PageRequest pageRequest = PageRequest.of(page, pageSize);
-                        logger.info("创建查询请求" + pageRequest.getPageNumber() + " " + pageRequest.getPageSize());
-                        Page<SupplierRisk> riskPage = dao.findAll(example1, pageRequest);
-
-                        logger.info("查询返回结果：" + riskPage.getContent().toArray().length + "条");
-                        for (SupplierRisk r : riskPage.getContent()) {
-                            List<String> builder = new ArrayList<>();
-                            Field[] fields = r.getClass().getDeclaredFields();
-                            for (Field f : fields) {
-                                f.setAccessible(true);
-                                Object value;
-                                try {
-                                    value = f.get(r);
-                                } catch (IllegalAccessException e) {
-                                    throw new RuntimeException(e);
-                                }
-                                if (value instanceof Integer || value instanceof Double) {
-                                    builder.add(value.toString());
-                                } else if (value instanceof Timestamp) {
-                                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                                    builder.add(dateFormat.format(value));
-                                } else {
-                                    builder.add((String) value);
-                                }
-                            }
-                            writer.writeNext(builder.toArray(new String[0]));
-                            trainCurrentCount.getAndIncrement();
-                        }
-                    });
-                }
-
-            } catch (Exception e) {
-                return "训练失败：" + "获取履约数据失败" + e.getMessage();
-            }
-
-            // 获取违约履约数据
-            totalPage = (int) Math.ceil(count0 / (double) pageSize); // 总页数
-            try {
-                for (int currentPage = 0; currentPage < totalPage; currentPage++) {
-                    final int page = currentPage;
-                    executorService.submit(() -> {
-                        PageRequest pageRequest = PageRequest.of(page, pageSize);
-                        logger.info("创建查询请求" + pageRequest.getPageNumber() + " " + pageRequest.getPageSize());
-                        Page<SupplierRisk> riskPage = dao.findAll(example0, pageRequest);
-
-                        logger.info("查询返回结果：" + riskPage.getContent().toArray().length + "条");
-                        for (SupplierRisk r : riskPage.getContent()) {
-                            List<String> builder = new ArrayList<>();
-                            Field[] fields = r.getClass().getDeclaredFields();
-                            for (Field f : fields) {
-                                f.setAccessible(true);
-                                Object value;
-                                try {
-                                    value = f.get(r);
-                                } catch (IllegalAccessException e) {
-                                    throw new RuntimeException(e);
-                                }
-                                if (value instanceof Integer || value instanceof Double) {
-                                    builder.add(value.toString());
-                                } else if (value instanceof Timestamp) {
-                                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                                    builder.add(dateFormat.format(value));
-                                } else {
-                                    builder.add((String) value);
-                                }
-                            }
-                            writer.writeNext(builder.toArray(new String[0]));
-                            trainCurrentCount.getAndIncrement();
-                        }
-                    });
-                }
-
-            } catch (Exception e) {
-                return "训练失败：" + "获取违约数据失败" + e.getMessage();
-            }
-
-            executorService.shutdown();
-            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-
-            writer.close();
-//            String pythonPath = "/app/classes/static/train.py";
-            String pythonPath = "/Users/a3/IdeaProjects/RiskPredict/src/main/resources/static/train.py";
-            //指定命令、路径、传递的参数
-            String[] arguments = new String[]{"python3", pythonPath};
-            String trainResult = invokePython(arguments);
-            isTraining.set(false);
-            return trainResult;
-        } catch (Exception e) {
-            return "训练失败" + " 失败原因：" + e.getMessage();
+        if (isTraining.get()) {
+            return "系统正在训练中";
         }
-
-
+        isTraining.set(true);
+        service.trainModel();
+        return "系统开始训练";
     }
+
 
     @RequestMapping(method = RequestMethod.GET, value = "/risk/trainProgress")
     public String getTrainProgress() {
         if (isTraining.get()) {
             ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("supply_id"); // 忽略 supply_id 属性
             Example<SupplierRisk> example1 = Example.of(SupplierRisk.builder().sample_class(1).build(), matcher);
-            count1 = dao.count(example1);
+            long count1 = dao.count(example1);
             Example<SupplierRisk> example0 = Example.of(SupplierRisk.builder().sample_class(0).build(), matcher);
-            count0 = dao.count(example0);
+            long count0 = dao.count(example0);
             long i = trainCurrentCount.get();
             long j = count0 + count1;
-            if (i < j) {
-                return "正在更新中，进度：" + "正在获取数据：" + i + "/" + j;
+            if (i < j*0.955) {
+                return "正在获取训练数据，进度：" + i + "/" + j;
             } else {
-                return "正在更新中，进度：" + "正在训练：" + output.toString();
+                return "正在训练，进度：" + output.toString();
             }
         } else return "当前系统不在训练中";
     }
@@ -475,47 +336,6 @@ public class RiskController {
         service.max_history_breach_amount(supply_id);
         service.sum_history_breach_amount(supply_id);
         service.avg_history_breach_amount(supply_id);
-    }
-
-    private String invokePython(String[] arguments) {
-        try {
-            ProcessBuilder builder = new ProcessBuilder(arguments);
-            Process process = builder.start();
-
-            // 获取字符输入流对象
-            BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream(),
-                    StandardCharsets.UTF_8));
-            // 获取错误信息的字符输入流对象
-            BufferedReader err = new BufferedReader(new InputStreamReader(process.getErrorStream(),
-                    StandardCharsets.UTF_8));
-
-            String line;
-            // 记录输出结果
-            while ((line = in.readLine()) != null) {
-                output.append(line).append("\n");
-            }
-
-            // 记录错误信息
-            while ((line = err.readLine()) != null) {
-                error.append(line).append("\n");
-            }
-
-            in.close();
-            err.close();
-            process.waitFor();
-        } catch (Exception e) {
-            return output.toString()+error.toString()+e.getMessage();
-        }
-
-        String errorMsg = error.toString();
-        if (!errorMsg.isEmpty()) {
-            logger.warn(errorMsg);
-            return "预测失败" + " 失败原因：" + errorMsg;
-        }
-
-        String s = output.toString();
-        output.setLength(0);
-        return s;
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/risk/cleanLogs")
