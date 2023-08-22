@@ -221,6 +221,7 @@ public class RiskController {
         else if (trainTimer.toString().contains("训练完成")) {
 
             String s = trainTimer.toString();
+            trainTimer.setLength(0);
             return s + "训练信息:\n" + invokePythonOutput.toString();
 
         }

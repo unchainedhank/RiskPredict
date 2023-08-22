@@ -170,13 +170,15 @@ public class RiskServiceImpl {
     public void trainModel() {
         try {
             TimeInterval timer = DateUtil.timer();
-//            File trainCsv = new File("/Users/a3/IdeaProjects/RiskPredict/src/main/resources/static/t_supply_risk.csv");
+//            File trainCsv = new File("/Users/a3/IdeaProjects/RiskPredict/src/main/resources/static/t_supply_risk
+//            .csv");
             File trainCsv = new File("/app/classes/static/t_supply_risk.csv");
             if (trainCsv.delete()) logger.info("成功删除旧文件");
             else logger.info("删除旧文件失败");
 
 
-//            CSVWriter writer = new CSVWriter(new FileWriter("/Users/a3/IdeaProjects/RiskPredict/src/main/resources/static/t_supply_risk.csv", true));
+//            CSVWriter writer = new CSVWriter(new FileWriter
+//            ("/Users/a3/IdeaProjects/RiskPredict/src/main/resources/static/t_supply_risk.csv", true));
             CSVWriter writer = new CSVWriter(new FileWriter("/app/classes/static/t_supply_risk.csv", true));
             String header = "supply_id,sample_class,supplier_name,supply_code,supplier_id," +
                     "tender_id,contract_cycle,avg_history_contract_cycle,plan_cycle,avg_yearly_plan_cycle," +
@@ -217,20 +219,18 @@ public class RiskServiceImpl {
             getTrainData(writer, example0, executorService, pageSize, totalPage);
 
             executorService.shutdown();
-            boolean ifAllComplete = executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
 
-            if (ifAllComplete) {
-                writer.close();
-                 String pythonPath = "/app/classes/static/train.py";
+            writer.close();
+            String pythonPath = "/app/classes/static/train.py";
 //                String pythonPath = "/Users/a3/IdeaProjects/RiskPredict/src/main/resources/static/train.py";
-                //指定命令、路径、传递的参数
-                String[] arguments = new String[]{"python3", pythonPath};
-                invokePython(arguments);
-                trainTimer.append("训练完成于").append(DateTime.now()).append("共耗时").append(DateUtil.formatBetween(timer.interval(),
-                        BetweenFormatter.Level.MINUTE));
-                isTraining.set(false);
+            //指定命令、路径、传递的参数
+            String[] arguments = new String[]{"python3", pythonPath};
+            invokePython(arguments);
+            trainTimer.append("训练完成于").append(DateTime.now()).append("共耗时").append(DateUtil.formatBetween(timer.interval(),
+                    BetweenFormatter.Level.MINUTE));
+            isTraining.set(false);
 
-            }
         } catch (Exception e) {
             logger.error(e.getMessage());
         }
@@ -352,15 +352,13 @@ public class RiskServiceImpl {
                 });
             }
             executorService.shutdown();
-            boolean ifAllComplete = executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-            if (ifAllComplete) {
-                int s = updateCurrentCount.get();
-                isUpdating.set(false);
-                updateCurrentCount.set(0);
-                String a = "更新完成于" + DateUtil.now() + "，共更新记录" + s + "条";
-                updateOutput.append(a).append("，共耗时：").append(DateUtil.formatBetween(timer.intervalMs(),
-                        BetweenFormatter.Level.MINUTE));
-            }
+            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            int s = updateCurrentCount.get();
+            isUpdating.set(false);
+            updateCurrentCount.set(0);
+            String a = "更新完成于" + DateUtil.now() + "，共更新记录" + s + "条";
+            updateOutput.append(a).append("，共耗时：").append(DateUtil.formatBetween(timer.intervalMs(),
+                    BetweenFormatter.Level.MINUTE));
         } catch (Exception e) {
             isUpdating.set(false);
             updateCurrentCount.set(0);

@@ -5973,3 +5973,39 @@ Caused by: java.nio.channels.AsynchronousCloseException: null
 2023-08-22 11:58:57.001  INFO 96578 --- [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
 2023-08-22 11:58:57.004  INFO 96578 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
 2023-08-22 11:58:57.042  INFO 96578 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2023-08-22 12:01:59.299  INFO 96841 --- [main] a.i.r.RiskPredictApplicationTests        : Starting RiskPredictApplicationTests using Java 1.8.0_362 on MainMac.local with PID 96841 (started by a3 in /Users/a3/IdeaProjects/RiskPredict)
+2023-08-22 12:01:59.301  INFO 96841 --- [main] a.i.r.RiskPredictApplicationTests        : No active profile set, falling back to default profiles: default
+2023-08-22 12:02:00.765  INFO 96841 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-08-22 12:02:00.850  INFO 96841 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 67 ms. Found 1 JPA repository interfaces.
+2023-08-22 12:02:00.992  WARN 96841 --- [main] o.m.s.mapper.ClassPathMapperScanner      : No MyBatis mapper was found in '[ac.iie.riskpredict]' package. Please check your configuration.
+2023-08-22 12:02:01.713  INFO 96841 --- [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2023-08-22 12:02:01.790  INFO 96841 --- [main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 5.4.32.Final
+2023-08-22 12:02:02.010  INFO 96841 --- [main] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2023-08-22 12:02:02.163  INFO 96841 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2023-08-22 12:02:02.509  INFO 96841 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2023-08-22 12:02:02.533  INFO 96841 --- [main] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.Oracle12cDialect
+2023-08-22 12:02:03.829  INFO 96841 --- [main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2023-08-22 12:02:03.841  INFO 96841 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2023-08-22 12:02:04.798  WARN 96841 --- [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2023-08-22 12:02:05.599  INFO 96841 --- [main] a.i.r.RiskPredictApplicationTests        : Started RiskPredictApplicationTests in 6.694 seconds (JVM running for 7.819)
+2023-08-22 12:02:05.789  INFO 96841 --- [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-08-22 12:02:05.792  INFO 96841 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2023-08-22 12:02:05.821  INFO 96841 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2023-08-22 12:05:54.658  INFO 97228 --- [main] a.i.r.RiskPredictApplicationTests        : Starting RiskPredictApplicationTests using Java 1.8.0_362 on MainMac.local with PID 97228 (started by a3 in /Users/a3/IdeaProjects/RiskPredict)
+2023-08-22 12:05:54.662  INFO 97228 --- [main] a.i.r.RiskPredictApplicationTests        : No active profile set, falling back to default profiles: default
+2023-08-22 12:05:55.408  INFO 97228 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-08-22 12:05:55.465  INFO 97228 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 48 ms. Found 1 JPA repository interfaces.
+2023-08-22 12:05:55.584  WARN 97228 --- [main] o.m.s.mapper.ClassPathMapperScanner      : No MyBatis mapper was found in '[ac.iie.riskpredict]' package. Please check your configuration.
+2023-08-22 12:05:56.255  INFO 97228 --- [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2023-08-22 12:05:56.334  INFO 97228 --- [main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 5.4.32.Final
+2023-08-22 12:05:56.552  INFO 97228 --- [main] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2023-08-22 12:05:56.713  INFO 97228 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2023-08-22 12:05:57.053  INFO 97228 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2023-08-22 12:05:57.077  INFO 97228 --- [main] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.Oracle12cDialect
+2023-08-22 12:05:58.340  INFO 97228 --- [main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2023-08-22 12:05:58.351  INFO 97228 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2023-08-22 12:05:59.369  WARN 97228 --- [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2023-08-22 12:06:00.245  INFO 97228 --- [main] a.i.r.RiskPredictApplicationTests        : Started RiskPredictApplicationTests in 5.999 seconds (JVM running for 7.069)
+2023-08-22 12:06:00.432  INFO 97228 --- [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-08-22 12:06:00.435  INFO 97228 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2023-08-22 12:06:00.473  INFO 97228 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
